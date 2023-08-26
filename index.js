@@ -38,7 +38,7 @@ const run = async () => {
 
         core.setOutput('mockoon-docs-md', prComment);
 
-        const payload = JSON.stringify(context.payload, undefined, 2);
+        // const payload = JSON.stringify(context.payload, undefined, 2);
     } catch (error) {
         core.setFailed(error.message);
     }
@@ -73,7 +73,7 @@ const parseMockoon = (mockoonJson) => {
         route['responses'].forEach(response => {
             const responseUuid = response['uuid'];
             const responseBody = response['body'];
-            const responseStatusCode = response['statusCode'];
+            // const responseStatusCode = response['statusCode'];
             const responseLabel = response['label'];
 
             md = appendNewLine(md, `### ${responseLabel ? responseLabel + ' - ' : ''}${responseUuid}`);
@@ -123,5 +123,5 @@ const appendNewLine = (md, str) => {
 };
 
 run()
-    .then(_ => console.log('parsed mockoon successfully'))
+    .then(() => console.log('parsed mockoon successfully'))
     .catch(err => console.error('failed to create mockoon docs', err));
