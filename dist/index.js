@@ -13413,7 +13413,8 @@ const run = async () => {
     try {
         const context = github.context;
         if (context.payload.pull_request == null) {
-            core.setFailed('No pull request found');
+            console.warn('Action should be run against pull requests');
+            // core.setFailed('No pull request found');
             return;
         }
 
