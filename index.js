@@ -113,7 +113,7 @@ const parseMockoon = (mockoonJson) => {
             md = appendNewLine(md, '```\n');
         });
     });
-    
+
     return md;
 };
 
