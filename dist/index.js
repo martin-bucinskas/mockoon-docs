@@ -13419,6 +13419,10 @@ const run = async () => {
 
         const mockoonFilePath = core.getInput('mockoon-json-file');
         console.log(`Received mockoon file: ${mockoonFilePath}`);
+
+        const githubToken = core.getInput('github-token');
+        const octokit = new Octokit({ auth: githubToken });
+
         const { data: fileContent } = await octokit.rest.repos.getContent({
             owner: context.issue.owner,
             repo: context.issue.repo,
@@ -13431,10 +13435,8 @@ const run = async () => {
         const prComment = parseMockoon(mockoonJson);
 
         const pullRequestNumber = context.payload.pull_request.number;
-        const githubToken = core.getInput('github-token');
-        const octokit = new Octokit({ auth: githubToken });
 
-        const newComment = octokit.rest.issues.createComment({
+        await octokit.rest.issues.createComment({
             ...context.repo,
             issue_number: pullRequestNumber,
             body: prComment
