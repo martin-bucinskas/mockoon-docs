@@ -29,7 +29,7 @@ const run = async () => {
 
         const pullRequestNumber = context.payload.pull_request.number;
 
-        const newComment = octokit.rest.issues.createComment({
+        await octokit.rest.issues.createComment({
             ...context.repo,
             issue_number: pullRequestNumber,
             body: prComment
