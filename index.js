@@ -38,7 +38,6 @@ const run = async () => {
         core.setOutput('mockoon-docs-md', prComment);
 
         const payload = JSON.stringify(context.payload, undefined, 2);
-        console.log(`Event payload: ${payload}`);
     } catch (error) {
         core.setFailed(error.message);
     }
@@ -114,9 +113,7 @@ const parseMockoon = (mockoonJson) => {
             md = appendNewLine(md, '```\n');
         });
     });
-
-    console.log(md);
-    // fs.writeFileSync('mock-pr-data.md', md);
+    
     return md;
 };
 
@@ -124,9 +121,6 @@ const appendNewLine = (md, str) => {
     return md + str + '\n';
 };
 
-// const fs = require('fs');
-// const mockoonJson = JSON.parse(fs.readFileSync('demo.json', 'utf-8'));
-// parseMockoon(mockoonJson);
 run()
     .then(_ => console.log('parsed mockoon successfully'))
     .catch(err => console.error('failed to create mockoon docs', err));

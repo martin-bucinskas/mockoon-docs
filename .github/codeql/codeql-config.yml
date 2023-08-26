@@ -1,0 +1,4 @@
+name: "mockoon-docs CodeQL config"
+paths-ignore:
+  - node_modules
+  - dist
