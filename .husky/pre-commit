@@ -11,6 +11,6 @@ echo "Ensuring UNIX line endings..."
 
 # Convert to Unix line endings
 for FILE in $FILES; do
-  dos2unix "$FILE"
+  unix2dos "$FILE"
   git add "$FILE"
 done
