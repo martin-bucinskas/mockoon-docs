@@ -11,5 +11,5 @@ outputs:
   mockoon-docs-md:
     description: 'Markdown version of Mockoon mock'
 runs:
-  using: 'node18'
+  using: 'node20'
   main: 'dist/index.js'
