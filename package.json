@@ -35,7 +35,6 @@
     "@vercel/ncc": "^0.36.1",
     "eslint": "^8.48.0",
     "husky": "^8.0.0",
-    "jest": "^29.6.4",
-    "line-ending-corrector": "^1.0.1"
+    "jest": "^29.6.4"
   }
 }
