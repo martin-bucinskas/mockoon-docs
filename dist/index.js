@@ -13427,7 +13427,7 @@ const run = async () => {
             owner: context.issue.owner,
             repo: context.issue.repo,
             path: mockoonFilePath,
-            ref: `refs/pull/${context.issue.number}`
+            ref: context.payload.pull_request.head.sha
         });
         const content = Buffer.from(fileContent.content, 'base64').toString();
         const mockoonJson = JSON.parse(content);
