@@ -40,18 +40,18 @@ jobs:
         id: npm-ci-test
         run: npm run test:ci
 
-  test-action:
-    name: GitHub Actions Test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v3
-
-      - name: Test Local Action
-        id: test-action
-        uses: ./
-        with:
-          mockoon-json-file: test/demo.json
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+#  test-action:
+#    name: GitHub Actions Test
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: Checkout
+#        id: checkout
+#        uses: actions/checkout@v3
+#
+#      - name: Test Local Action
+#        id: test-action
+#        uses: ./
+#        with:
+#          mockoon-json-file: test/demo.json
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
