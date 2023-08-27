@@ -1,4 +1,4 @@
-require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
+/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 7351:
@@ -13228,6 +13228,156 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 6144:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const github_1 = __importDefault(__nccwpck_require__(5438));
+const rest_1 = __nccwpck_require__(5375);
+const run = async () => {
+    try {
+        const context = github_1.default.context;
+        if (context.payload.pull_request == null) {
+            console.warn('Action should be run against pull requests');
+            // core.setFailed('No pull request found');
+            return;
+        }
+        const mockoonFilePath = core.getInput('mockoon-json-file');
+        console.log(`Received mockoon file: ${mockoonFilePath}`);
+        const githubToken = core.getInput('github-token');
+        const octokit = new rest_1.Octokit({ auth: githubToken });
+        const fileResponse = await octokit.rest.repos.getContent({
+            owner: context.issue.owner,
+            repo: context.issue.repo,
+            path: mockoonFilePath,
+            ref: context.payload.pull_request.head.sha
+        });
+        let content = '';
+        if ('content' in fileResponse.data) {
+            content = Buffer.from(fileResponse.data.content, 'base64').toString();
+        }
+        else {
+            core.setFailed('Expected file content, but received something else');
+            return;
+        }
+        const mockoonJson = JSON.parse(content);
+        const prComment = parseMockoon(mockoonJson);
+        const pullRequestNumber = context.payload.pull_request.number;
+        await octokit.rest.issues.createComment({
+            ...context.repo,
+            issue_number: pullRequestNumber,
+            body: prComment
+        });
+        core.setOutput('mockoon-docs-md', prComment);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            core.setFailed(error.message);
+        }
+    }
+};
+const parseMockoon = (mockoonJson) => {
+    const uuid = mockoonJson.uuid;
+    const lastMigration = mockoonJson.lastMigration;
+    const name = mockoonJson.name;
+    const hostname = mockoonJson.hostname;
+    const port = mockoonJson.port;
+    const basePath = mockoonJson.endpointPrefix;
+    let md = '';
+    md = appendNewLine(md, `## ${name}`);
+    md = appendNewLine(md, `UUID: ${uuid}`);
+    md = appendNewLine(md, `Last Migration: ${lastMigration}`);
+    md = appendNewLine(md, `Hostname: ${hostname}`);
+    md = appendNewLine(md, `Port: ${port}`);
+    md = appendNewLine(md, `Base Path: ${basePath}`);
+    md = appendNewLine(md, '');
+    md = appendNewLine(md, '### Endpoints');
+    for (const route of mockoonJson.routes) {
+        console.log(route.uuid);
+        const endpoint = route.endpoint;
+        const type = route.type;
+        const method = route.method.toUpperCase();
+        md = appendNewLine(md, `- ${type === 'crud' ? 'CRUD' : method} ${hostname}:${port}/${endpoint}`);
+        md = appendNewLine(md, '');
+        for (const response of route.responses) {
+            const responseUuid = response.uuid;
+            const responseBody = response.body;
+            // const responseStatusCode = response.statusCode
+            const responseLabel = response.label;
+            md = appendNewLine(md, `### ${responseLabel ? `${responseLabel}  - ` : ''}${responseUuid}`);
+            let updatedPath = endpoint;
+            const query = [];
+            const headers = [];
+            for (const rule of response.rules) {
+                switch (rule.target) {
+                    case 'params':
+                        updatedPath = endpoint.replaceAll(`:${rule.modifier}`, rule.value);
+                        break;
+                    case 'header':
+                        headers.push(`${rule.modifier}: ${rule.value}`);
+                        break;
+                    case 'query':
+                        query.push(`${rule.modifier}=${rule.value}`);
+                        break;
+                    default:
+                        console.error(`rule target not covered: ${rule.target}`);
+                }
+            }
+            md = appendNewLine(md, '```bash');
+            md = appendNewLine(md, `${method === 'crud' ? 'CRUD' : method} ${hostname}:${port}/${updatedPath}${query.length > 0 ? `?${query.join('&')}` : ''}`);
+            if (headers.length > 0) {
+                md = appendNewLine(md, `${headers.join('\n')}`);
+            }
+            md = appendNewLine(md, '```\n');
+            md = appendNewLine(md, '#### Response');
+            md = appendNewLine(md, '```bash');
+            if (responseBody !== '') {
+                md = appendNewLine(md, responseBody);
+            }
+            md = appendNewLine(md, '```\n');
+        }
+    }
+    return md;
+};
+const appendNewLine = (md, str) => {
+    return `${md}${str}\n`;
+};
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
+run();
+
+
+/***/ }),
+
 /***/ 2877:
 /***/ ((module) => {
 
@@ -13402,140 +13552,12 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
-(() => {
-const core = __nccwpck_require__(2186);
-const github = __nccwpck_require__(5438);
-const { Octokit } = __nccwpck_require__(5375);
-
-const run = async () => {
-    try {
-        const context = github.context;
-        if (context.payload.pull_request == null) {
-            console.warn('Action should be run against pull requests');
-            // core.setFailed('No pull request found');
-            return;
-        }
-
-        const mockoonFilePath = core.getInput('mockoon-json-file');
-        console.log(`Received mockoon file: ${mockoonFilePath}`);
-
-        const githubToken = core.getInput('github-token');
-        const octokit = new Octokit({ auth: githubToken });
-
-        const { data: fileContent } = await octokit.rest.repos.getContent({
-            owner: context.issue.owner,
-            repo: context.issue.repo,
-            path: mockoonFilePath,
-            ref: context.payload.pull_request.head.sha
-        });
-        const content = Buffer.from(fileContent.content, 'base64').toString();
-        const mockoonJson = JSON.parse(content);
-
-        const prComment = parseMockoon(mockoonJson);
-
-        const pullRequestNumber = context.payload.pull_request.number;
-
-        await octokit.rest.issues.createComment({
-            ...context.repo,
-            issue_number: pullRequestNumber,
-            body: prComment
-        });
-
-        core.setOutput('mockoon-docs-md', prComment);
-
-        // const payload = JSON.stringify(context.payload, undefined, 2);
-    } catch (error) {
-        core.setFailed(error.message);
-    }
-};
-
-const parseMockoon = (mockoonJson) => {
-    const uuid = mockoonJson['uuid'];
-    const lastMigration = mockoonJson['lastMigration'];
-    const name = mockoonJson['name'];
-    const hostname = mockoonJson['hostname'];
-    const port = mockoonJson['port'];
-    const basePath = mockoonJson['endpointPrefix'];
-
-    let md = "";
-    md = appendNewLine(md, `## ${name}`);
-    md = appendNewLine(md, `UUID: ${uuid}`);
-    md = appendNewLine(md, `Last Migration: ${lastMigration}`);
-    md = appendNewLine(md, `Hostname: ${hostname}`);
-    md = appendNewLine(md, `Port: ${port}`);
-    md = appendNewLine(md, `Base Path: ${basePath}`);
-    md = appendNewLine(md, '');
-
-    md = appendNewLine(md, '### Endpoints');
-    mockoonJson['routes'].forEach(route => {
-        console.log(route['uuid']);
-        const endpoint = route['endpoint'];
-        const type = route['type'];
-        const method = route['method'].toUpperCase();
-        md = appendNewLine(md, `- ${type === 'crud' ? 'CRUD' : method} ${hostname}:${port}/${endpoint}`);
-        md = appendNewLine(md, '')
-
-        route['responses'].forEach(response => {
-            const responseUuid = response['uuid'];
-            const responseBody = response['body'];
-            // const responseStatusCode = response['statusCode'];
-            const responseLabel = response['label'];
-
-            md = appendNewLine(md, `### ${responseLabel ? responseLabel + ' - ' : ''}${responseUuid}`);
-
-            let updatedPath = endpoint;
-            let query = [];
-            let headers = [];
-
-            response['rules'].forEach(rule => {
-                switch (rule.target) {
-                    case "params":
-                        updatedPath = endpoint.replaceAll(`:${rule['modifier']}`, rule['value']);
-                        break;
-                    case "header":
-                        headers.push(`${rule['modifier']}: ${rule['value']}`);
-                        break;
-                    case "query":
-                        query.push(`${rule['modifier']}=${rule['value']}`);
-                        break;
-
-                    default:
-                        console.error(`rule target not covered: ${rule.target}`);
-                }
-            });
-
-            md = appendNewLine(md, '```bash');
-            md = appendNewLine(md, `${method === 'crud' ? 'CRUD' : method} ${hostname}:${port}/${updatedPath}${query.length > 0 ? '?' + query.join('&') : ''}`);
-            if (headers.length > 0) {
-                md = appendNewLine(md, `${headers.join('\n')}`);
-            }
-            md = appendNewLine(md, '```\n');
-
-            md = appendNewLine(md, '#### Response');
-            md = appendNewLine(md, '```bash');
-            if (responseBody !== '') {
-                md = appendNewLine(md, responseBody);
-            }
-            md = appendNewLine(md, '```\n');
-        });
-    });
-
-    return md;
-};
-
-const appendNewLine = (md, str) => {
-    return md + str + '\n';
-};
-
-run()
-    .then(() => console.log('parsed mockoon successfully'))
-    .catch(err => console.error('failed to create mockoon docs', err));
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(6144);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;
-//# sourceMappingURL=index.js.map

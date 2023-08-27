@@ -1,4 +1,4 @@
-name: Check dist/
+name: Check dist/ directory
 
 on:
   push:
@@ -14,25 +14,35 @@ on:
 jobs:
   check-dist:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      statuses: write
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v3
 
       - name: Set Node.js 20.x
         uses: actions/setup-node@v3.8.1
         with:
           node-version: 20.x
+          cache: npm
 
       - name: Install dependencies
+        id: install
         run: npm ci
 
       - name: Rebuild the dist/ directory
+        id: build
         run: npm run prepare
 
       - name: Compare the expected and actual dist/ directories
         run: |
-          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
+          if [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after build. See status below:"
-            git diff
+            git diff --ignore-space-at-eol --text dist/
             exit 1
           fi
         id: diff

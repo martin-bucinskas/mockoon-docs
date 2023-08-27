@@ -14,8 +14,10 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+
     permissions:
       actions: read
+      checks: write
       contents: read
       security-events: write
 
@@ -23,20 +25,23 @@ jobs:
       fail-fast: false
       matrix:
         language:
-          - javascript
+          - TypeScript
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
+        id: checkout
         uses: actions/checkout@v3
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
           languages: ${{ matrix.language }}
-          config-file: .github/codeql/codeql-config.yml
+          source-root: src
 
       - name: Autobuild
+        id: autobuild
         uses: github/codeql-action/autobuild@v2
 
       - name: Perform CodeQL Analysis
+        id: analyze
         uses: github/codeql-action/analyze@v2

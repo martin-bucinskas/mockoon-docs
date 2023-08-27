@@ -1,5 +1,6 @@
 name: 'mockoon-docs'
 description: 'Create mockoon docs'
+author: 'Martin Bucinskas'
 inputs:
   mockoon-json-file:
     description: 'The JSON file of the Mockoon mock'
