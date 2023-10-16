@@ -66,7 +66,7 @@
     "@actions/core": "^1.10.1",
     "@actions/github": "^5.1.1",
     "@mockoon/commons": "^4.1.0",
-    "@octokit/rest": "^20.0.1",
+    "@octokit/rest": "^20.0.2",
     "node-stringbuilder": "^2.2.6"
   },
   "devDependencies": {
